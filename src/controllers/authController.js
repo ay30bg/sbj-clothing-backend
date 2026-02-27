@@ -84,35 +84,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// // ===============================
-// // FORGOT PASSWORD
-// // ===============================
-// exports.forgotPassword = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-
-//     const user = await User.findOne({ email });
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     const resetToken = crypto.randomBytes(20).toString("hex");
-
-//     user.resetToken = resetToken;
-//     user.resetTokenExpire = Date.now() + 15 * 60 * 1000; // 15 mins
-
-//     await user.save();
-
-//     // Normally send email here
-//     res.status(200).json({
-//       message: "Reset token generated",
-//       resetToken, // remove this in production
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
 // ===============================
 // FORGOT PASSWORD
 // ===============================
@@ -133,8 +104,8 @@ exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    // 3️⃣ Create reset URL
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+    // 3️⃣ Create reset URL using FRONTEND_URL
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     // 4️⃣ Email content
     const message = `
