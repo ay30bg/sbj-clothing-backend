@@ -132,3 +132,42 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ message: "Something went wrong" });
   }
 };
+
+// ===============================
+// RESET PASSWORD
+// ===============================
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and new password are required" });
+    }
+
+    // 1️⃣ Find the user with this token and check if it's still valid
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpire: { $gt: Date.now() }, // not expired
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+
+    // 2️⃣ Hash the new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    // 3️⃣ Clear the reset token fields
+    user.resetToken = undefined;
+    user.resetTokenExpire = undefined;
+
+    // 4️⃣ Save the updated user
+    await user.save();
+
+    res.status(200).json({ message: "Password has been reset successfully" });
+  } catch (error) {
+    console.error("Reset password error:", error.message);
+    res.status(500).json({ message: "Something went wrong" });
+  }
+};
