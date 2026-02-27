@@ -2,6 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const sendEmail = require("../utils/email");
 
 // ===============================
 // Generate JWT
@@ -83,6 +84,35 @@ exports.login = async (req, res) => {
   }
 };
 
+// // ===============================
+// // FORGOT PASSWORD
+// // ===============================
+// exports.forgotPassword = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+
+//     const user = await User.findOne({ email });
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     const resetToken = crypto.randomBytes(20).toString("hex");
+
+//     user.resetToken = resetToken;
+//     user.resetTokenExpire = Date.now() + 15 * 60 * 1000; // 15 mins
+
+//     await user.save();
+
+//     // Normally send email here
+//     res.status(200).json({
+//       message: "Reset token generated",
+//       resetToken, // remove this in production
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 // ===============================
 // FORGOT PASSWORD
 // ===============================
@@ -90,24 +120,44 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    // 1️⃣ Find the user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // 2️⃣ Generate reset token
     const resetToken = crypto.randomBytes(20).toString("hex");
-
     user.resetToken = resetToken;
-    user.resetTokenExpire = Date.now() + 15 * 60 * 1000; // 15 mins
+    user.resetTokenExpire = Date.now() + 15 * 60 * 1000; // 15 minutes
 
     await user.save();
 
-    // Normally send email here
+    // 3️⃣ Create reset URL
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    // 4️⃣ Email content
+    const message = `
+      <h2>Password Reset Request</h2>
+      <p>Hello,</p>
+      <p>We received a request to reset your password. Click the link below to reset it:</p>
+      <a href="${resetUrl}" target="_blank">Reset Password</a>
+      <p>This link will expire in 15 minutes.</p>
+      <p>If you did not request this, you can ignore this email.</p>
+    `;
+
+    // 5️⃣ Send email
+    await sendEmail({
+      to: user.email,
+      subject: "Password Reset Request",
+      html: message,
+    });
+
     res.status(200).json({
-      message: "Reset token generated",
-      resetToken, // remove this in production
+      message: "Reset password link has been sent to your email",
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Forgot password error:", error.message);
+    res.status(500).json({ message: "Something went wrong" });
   }
 };
