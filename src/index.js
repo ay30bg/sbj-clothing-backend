@@ -164,7 +164,7 @@ mongoose
 // Auto-reconnect
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected... reconnecting');
-  mongoose.connect(process.env.MONGODB_URI);
+  mongoose.connect(process.env.MONGO_URI);
 });
 
 // ============== ERROR HANDLER =============
@@ -181,6 +181,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
 
 
 
