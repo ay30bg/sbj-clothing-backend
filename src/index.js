@@ -1,3 +1,36 @@
+// // require("dotenv").config();
+// // const express = require("express");
+// // const mongoose = require("mongoose");
+// // const cors = require("cors");
+
+// // const app = express();
+
+// // // Middlewares
+// // app.use(cors());
+// // app.use(express.json());
+
+// // // ✅ Root Route (ADD THIS HERE)
+// // app.get("/", (req, res) => {
+// //   res.status(200).json({
+// //     message: "SBJ Clothings API is running 🚀",
+// //   });
+// // });
+
+// // // Routes
+// // app.use("/api/auth", require("./routes/authRoutes"));
+// // app.use("/api/orders", require("./routes/orderRoutes"));
+
+// // // Connect DB
+// // mongoose
+// //   .connect(process.env.MONGO_URI)
+// //   .then(() => console.log("MongoDB Connected"))
+// //   .catch((err) => console.error(err));
+
+// // const PORT = process.env.PORT || 5000;
+
+// // app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+
 // require("dotenv").config();
 // const express = require("express");
 // const mongoose = require("mongoose");
@@ -5,104 +38,168 @@
 
 // const app = express();
 
-// // Middlewares
-// app.use(cors());
-// app.use(express.json());
+// // ================= MIDDLEWARES =================
+// const allowedOrigins = [
+//   "http://localhost:3000",
+//   "https://sbj-clothing.vercel.app",
+// ];
 
-// // ✅ Root Route (ADD THIS HERE)
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin || allowedOrigins.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("CORS blocked"));
+//       }
+//     },
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     allowedHeaders: ["Content-Type", "Authorization"],
+//     credentials: true,
+//   })
+// );
+
+// app.use(express.json());
+// app.set("trust proxy", 1); // optional but safe
+
+// // ================= ROOT ROUTE =================
 // app.get("/", (req, res) => {
 //   res.status(200).json({
 //     message: "SBJ Clothings API is running 🚀",
 //   });
 // });
 
-// // Routes
+// // ================= ROUTES =================
 // app.use("/api/auth", require("./routes/authRoutes"));
 // app.use("/api/orders", require("./routes/orderRoutes"));
 
-// // Connect DB
+// // ================= MONGODB CONNECTION =================
 // mongoose
-//   .connect(process.env.MONGO_URI)
-//   .then(() => console.log("MongoDB Connected"))
-//   .catch((err) => console.error(err));
+//   .connect(process.env.MONGO_URI, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true,
+//   })
+//   .then(() => console.log("✅ MongoDB Connected"))
+//   .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
 
+// // Auto-reconnect on disconnect
+// mongoose.connection.on("disconnected", () => {
+//   console.log("MongoDB disconnected... reconnecting");
+//   mongoose.connect(process.env.MONGO_URI).catch((err) =>
+//     console.error("❌ Reconnect failed:", err.message)
+//   );
+// });
+
+// // ================= ERROR HANDLER =================
+// app.use((err, req, res, next) => {
+//   console.error("SERVER ERROR:", err.message);
+//   res.status(500).json({
+//     error: "Something went wrong",
+//     details: err.message,
+//   });
+// });
+
+// // ================= START SERVER =================
 // const PORT = process.env.PORT || 5000;
+// app.listen(PORT, () => {
+//   console.log(`🚀 Server running on port ${PORT}`);
+// });
 
-// app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
+// index.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
 
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
+const authRoutes = require('./routes/authRoutes');
+const orderRoutes = require('./routes/orderRoutes')
 
 const app = express();
 
-// ================= MIDDLEWARES =================
+// Trust proxy (safe to keep)
+app.set('trust proxy', 1);
+
+// ================= CORS ==================
 const allowedOrigins = [
-  "http://localhost:3000",
+  'http://localhost:3000',
   "https://sbj-clothing.vercel.app",
+  
 ];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS blocked"));
-      }
-    },
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS blocked'));
+    }
+  },
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
 
+// ============== BODY PARSER ==============
 app.use(express.json());
-app.set("trust proxy", 1); // optional but safe
 
-// ================= ROOT ROUTE =================
-app.get("/", (req, res) => {
-  res.status(200).json({
-    message: "SBJ Clothings API is running 🚀",
-  });
+// ============== ROOT =====================
+app.get('/', (req, res) => {
+  res.json({ message: 'SBJ Clothings API is running 🚀' });
 });
 
 // ================= ROUTES =================
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/orders", require("./routes/orderRoutes"));
+app.use('/api/auth', authRoutes);
+app.use('/api/orders', orderRoutes);
 
-// ================= MONGODB CONNECTION =================
+
+// ================= MONGODB =================
 mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch((err) => console.error("❌ MongoDB Connection Error:", err.message));
-
-// Auto-reconnect on disconnect
-mongoose.connection.on("disconnected", () => {
-  console.log("MongoDB disconnected... reconnecting");
-  mongoose.connect(process.env.MONGO_URI).catch((err) =>
-    console.error("❌ Reconnect failed:", err.message)
+  .connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch((err) =>
+    console.error('❌ MongoDB Connection Error:', err.message)
   );
+
+// Auto-reconnect
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected... reconnecting');
+  mongoose.connect(process.env.MONGODB_URI);
 });
 
-// ================= ERROR HANDLER =================
+// ============== ERROR HANDLER =============
 app.use((err, req, res, next) => {
-  console.error("SERVER ERROR:", err.message);
+  console.error('SERVER ERROR:', err.message);
   res.status(500).json({
-    error: "Something went wrong",
+    error: 'Something went wrong',
     details: err.message,
   });
 });
 
-// ================= START SERVER =================
+// ============== START SERVER ==============
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
