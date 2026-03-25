@@ -16,7 +16,7 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   'http://localhost:3000',
   "https://sbj-clothing.vercel.app",
-  
+  "https://www.sbjclothings.shop",
 ];
 
 app.use(cors({
